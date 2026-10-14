@@ -1,0 +1,328 @@
+<title>우리학교 질문방</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: phone-sized app column centered on wide screens; header, scrolling view, bottom tab bar. */
+:root{
+  --bg:#eef2f7; --surface:#ffffff; --ink:#142038; --muted:#5d6b82; --line:#d9e0ea;
+  --accent:#2457d6; --accent-ink:#ffffff; --accent-soft:#e3ebfc;
+  --mark:#ffe46b; --good:#17825a; --good-soft:#dff3ea; --warn:#b4540a; --warn-soft:#fdebd9; --bad:#c0362c; --bad-soft:#fbe3e0;
+  --ai:#6b3fd4; --ai-soft:#ece6fb;
+  --font:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1424; --surface:#16203a; --ink:#e8edf7; --muted:#9aa8c2; --line:#2a3757;
+  --accent:#7ba2ff; --accent-ink:#0d1424; --accent-soft:#1d2d57;
+  --mark:#7a6a12; --good:#5fd3a0; --good-soft:#143a2d; --warn:#f0a35e; --warn-soft:#3d2a15; --bad:#ff8b80; --bad-soft:#44201d;
+  --ai:#b79cff; --ai-soft:#2a2150; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1424; --surface:#16203a; --ink:#e8edf7; --muted:#9aa8c2; --line:#2a3757;
+  --accent:#7ba2ff; --accent-ink:#0d1424; --accent-soft:#1d2d57;
+  --mark:#7a6a12; --good:#5fd3a0; --good-soft:#143a2d; --warn:#f0a35e; --warn-soft:#3d2a15; --bad:#ff8b80; --bad-soft:#44201d;
+  --ai:#b79cff; --ai-soft:#2a2150; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;margin:0;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:28px 28px;background-position:-1px -1px}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#app{max-width:480px;height:100%;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;position:relative;box-shadow:0 0 0 1px var(--line)}
+.hdr{padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hdr h1{font-size:17px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.school-tag{font-family:var(--mono);font-size:12px;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:4px;white-space:nowrap}
+.view{flex:1;overflow-y:auto;padding:14px 16px 24px;min-height:0}
+.tabs{display:flex;background:var(--surface);border-top:1px solid var(--line);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;border:0;background:none;padding:10px 4px 9px;color:var(--muted);font-size:12px;font-weight:500;position:relative}
+.tabs button[aria-current="page"]{color:var(--accent);font-weight:700}
+.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;left:25%;right:25%;height:3px;background:var(--accent);border-radius:0 0 3px 3px}
+.tabs .ico{display:block;font-size:19px;line-height:1.2}
+.badge{position:absolute;top:5px;margin-left:12px;background:var(--bad);color:#fff;border-radius:9px;font-size:10px;min-width:17px;height:17px;line-height:17px;padding:0 4px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.chip{flex-shrink:0;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:4px 12px;font-size:13px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips.sub .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:block;width:100%;text-align:left}
+button.card:hover{border-color:var(--accent)}
+.meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.meta .mono{font-family:var(--mono)}
+.q-title{font-weight:600;margin:4px 0 2px;overflow-wrap:anywhere}
+.q-body{color:var(--muted);font-size:14px;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.subj{font-size:12px;font-weight:600;padding:1px 7px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.pill{font-size:12px;padding:1px 8px;border-radius:10px;font-weight:600}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.senior{background:var(--mark);color:var(--ink)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 14px;font-weight:600;font-size:14px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.good{background:var(--good);color:var(--surface);border-color:var(--good)}
+.btn.ghost{border-color:transparent;background:none;color:var(--muted);padding:6px 8px;font-weight:500;font-size:13px}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:4px 10px;font-size:13px}
+.fab{position:absolute;right:16px;bottom:78px;z-index:5;box-shadow:0 4px 14px rgba(20,32,56,.3);border-radius:24px;padding:11px 18px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label{font-size:13px;font-weight:600}
+.field input,.field textarea,.field select{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 10px;width:100%}
+.field textarea{min-height:110px;resize:vertical}
+.hint{font-size:12px;color:var(--muted)}
+.ai-box{background:var(--ai-soft);border:1px solid var(--ai);border-radius:8px;padding:12px 14px;margin:0 0 12px}
+.ai-box h3{margin:0 0 6px;font-size:14px;color:var(--ai);display:flex;gap:6px;align-items:center}
+.ai-box ul{margin:4px 0;padding-left:18px;font-size:14px}
+.ai-box .sim{display:block;width:100%;text-align:left;border:0;background:var(--surface);border-radius:6px;padding:7px 10px;margin:4px 0;font-size:13px}
+.demo{font-family:var(--mono);font-size:10px;border:1px solid currentColor;border-radius:3px;padding:0 4px;font-weight:400}
+.ans{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin:0 0 14px}
+.ans.accepted{border-left-color:var(--good);background:linear-gradient(90deg,var(--good-soft),transparent 70%);border-radius:0 6px 6px 0;padding:8px 8px 8px 12px}
+.ans p{margin:4px 0;overflow-wrap:anywhere;white-space:pre-wrap}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.link{background:none;border:0;padding:0;font-weight:600;color:var(--ink);text-decoration:underline dotted;text-underline-offset:3px}
+.sheet-bg{position:absolute;inset:0;background:rgba(10,16,30,.5);z-index:20;display:flex;align-items:flex-end}
+.sheet{background:var(--surface);width:100%;border-radius:14px 14px 0 0;padding:16px;max-height:90%;overflow-y:auto}
+.sheet h2{font-size:16px;margin:0 0 10px}
+.toast{position:absolute;left:16px;right:16px;bottom:84px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;z-index:30;font-size:14px}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;border:1px dashed var(--line);border-radius:8px}
+.bubbles{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.bub{max-width:80%;padding:7px 11px;border-radius:12px;background:var(--surface);border:1px solid var(--line);overflow-wrap:anywhere}
+.bub.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sys{align-self:center;font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:2px 10px;text-align:center}
+.safety{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.safety li{display:flex;gap:8px;font-size:14px}
+.safety li::before{content:"✓";color:var(--good);font-weight:700}
+h2.sec{font-size:13px;color:var(--muted);letter-spacing:.04em;margin:18px 0 8px;font-weight:600}
+.onb{padding:24px 16px;overflow-y:auto;flex:1}
+.onb h1{font-size:24px;margin:0 0 4px}
+.steps{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:16px}
+.av{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;flex-shrink:0}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .2s ease-out}@keyframes up{from{transform:translateY(8px);opacity:0}}}
+</style>
+
+<div id="app"></div>
+
+<script>
+/* ---------- data ---------- */
+const SCHOOLS=['서울가온고등학교','부산바다고등학교'];
+const SUBJECTS=['국어','수학','영어','과학','사회','한국사'];
+let uid=100;
+const U={
+  me:{id:'me',name:'나',grade:2,school:SCHOOLS[0]},
+  u1:{id:'u1',name:'하윤',grade:3,school:SCHOOLS[0]},
+  u2:{id:'u2',name:'지호',grade:2,school:SCHOOLS[0]},
+  u3:{id:'u3',name:'서연',grade:1,school:SCHOOLS[0]},
+  u4:{id:'u4',name:'도현',grade:3,school:SCHOOLS[0]},
+  u5:{id:'u5',name:'민재',grade:2,school:SCHOOLS[1]},
+  u6:{id:'u6',name:'예린',grade:2,school:SCHOOLS[0]},
+};
+const S={
+  step:'onb1', tab:'board', grade:'all', subj:'all', open:null, sheet:null, toast:null,
+  me:{school:SCHOOLS[0],grade:2,name:'나'},
+  friends:['u2'], blocked:[], reported:[], dmUnlocked:{u6:true}, threads:{u6:[{sys:1,text:'답변이 채택되어 대화가 열렸어요'}]}, dmWith:null, dmUnread:0,
+  draft:{subject:'수학',title:'',body:''}, ai:null,
+  posts:[
+    {id:1,school:SCHOOLS[0],grade:2,subject:'수학',author:'u2',ago:'25분 전',title:'2단원 수행평가 범위 어디까지예요?',body:'김 선생님 수업 들으시는 분 계세요? 이번 수행평가 범위가 교재 40쪽까지인지 확인하고 싶어요.',answers:[{id:11,author:'u1',text:'작년에 같은 선생님이셨는데 교재 45쪽까지 나왔어요. 프린트물에서 변형 문제 위주로 내셨어요.',accepted:false}]},
+    {id:2,school:SCHOOLS[0],grade:2,subject:'수학',author:'me',ago:'2시간 전',title:'로그 부등식에서 밑이 1보다 작을 때 부등호 방향',body:'log₀.₅(x-1) > 2 를 풀 때 부등호 방향을 바꿔야 하는지 헷갈려요. 밑이 0.5라서 감소함수인 건 아는데, 진수 조건은 어떻게 같이 처리하나요?',answers:[
+      {id:21,author:'u1',text:'밑이 0과 1 사이면 감소함수라 부등호가 바뀌어요. x-1 < 0.5² = 0.25 이고, 진수 조건 x-1 > 0 도 같이 쓰면 1 < x < 1.25 입니다.',accepted:false},
+      {id:22,author:'u4',text:'진수 조건부터 먼저 쓰는 습관을 들이면 실수가 줄어요. 답은 1 < x < 5/4 입니다.',accepted:false}]},
+    {id:3,school:SCHOOLS[0],grade:1,subject:'과학',author:'u3',ago:'어제',title:'통합과학 1학기 중간고사 서술형 유형',body:'선생님이 서술형을 몇 문제 내시는지, 그림 해석이 많은지 궁금해요.',answers:[{id:31,author:'u6',text:'작년엔 3문제였고 그래프 해석이 2문제였어요. 용어 정의는 거의 안 나왔어요.',accepted:true}]},
+    {id:4,school:SCHOOLS[0],grade:3,subject:'국어',author:'u4',ago:'어제',title:'문학 EBS 연계 작품 중 학교 프린트에 안 나온 것',body:'모의고사 대비로 보충해야 할 작품 목록이 궁금합니다.',answers:[]},
+    {id:5,school:SCHOOLS[0],grade:2,subject:'영어',author:'u6',ago:'2일 전',title:'빈칸 추론 문제 푸는 순서 추천해주세요',body:'지문 먼저 읽는 편인데 시간이 모자라요. 선지부터 보는 게 나은가요?',answers:[]},
+    {id:6,school:SCHOOLS[1],grade:2,subject:'수학',author:'u5',ago:'1시간 전',title:'(다른 학교) 미분 접선 문제',body:'이 글은 다른 학교 게시판에만 보여요.',answers:[]},
+  ],
+};
+const $app=document.getElementById('app');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const user=id=>id==='me'?{...U.me,name:S.me.name,grade:S.me.grade,school:S.me.school}:U[id];
+const visible=p=>p.school===S.me.school&&!S.blocked.includes(p.author);
+
+/* ---------- AI hint coach (rule-based simulation) ---------- */
+function runAI(){
+  const {subject,title,body}=S.draft; const text=(title+' '+body).trim();
+  const tips=[];
+  if(text.length<25) tips.push('질문이 너무 짧아요. 어디서 막혔는지 한 문장 더 써 주세요.');
+  if(!/\d|쪽|단원|문제|번/.test(text)) tips.push('교재 쪽수나 문제 번호를 적으면 답변이 빨리 달려요.');
+  if(subject==='수학'&&!/풀|식|계산|시도/.test(text)) tips.push('내가 시도한 풀이 과정을 한 줄이라도 적어 주세요.');
+  if(subject==='영어'&&!/지문|문장|단락/.test(text)) tips.push('막힌 문장이나 지문을 그대로 붙여 넣어 보세요.');
+  if(/선생님|수행|시험|범위/.test(text)) tips.push('선생님 이름 대신 "과목 선생님"으로 쓰면 안전해요.');
+  if(!tips.length) tips.push('질문이 구체적이에요. 이대로 올려도 좋아요.');
+  const words=text.split(/\s+/).filter(w=>w.length>1);
+  const sims=S.posts.filter(p=>visible(p)&&p.subject===subject).map(p=>({p,score:words.filter(w=>(p.title+p.body).includes(w)).length})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,2).map(x=>x.p);
+  const hints={수학:'정답 대신 단서만: 조건을 식으로 먼저 옮기고, 변수의 범위(정의역)를 따로 적어 보세요.',국어:'지문의 핵심 문장에 밑줄을 긋고, 선지와 1:1로 대응시켜 보세요.',영어:'빈칸 앞뒤 문장의 논리 관계(대조·인과)를 먼저 표시해 보세요.',과학:'주어진 값의 단위를 먼저 정리하고 관련 법칙 하나를 골라 보세요.',사회:'사건의 원인과 결과를 두 줄로 요약해 보세요.',한국사:'시대 순서로 사건 3개를 먼저 나열해 보세요.'};
+  S.ai={tips,sims,hint:hints[subject]};
+}
+
+/* ---------- render ---------- */
+function render(){
+  if(S.step!=='app'){ $app.innerHTML=renderOnb(); return; }
+  const unread=S.dmUnread;
+  let main='';
+  if(S.open) main=renderDetail(); else if(S.dmWith) main=renderThread();
+  else main={board:renderBoard,friends:renderFriends,dm:renderDMList,me:renderMe}[S.tab]();
+  const inSub=S.open||S.dmWith;
+  const title=inSub?'':{board:'질문 게시판',friends:'친구',dm:'DM',me:'내 정보'}[S.tab];
+  $app.innerHTML=`
+  <header class="hdr">${inSub?`<button class="btn ghost" data-a="back" aria-label="뒤로">←</button>`:''}
+    <h1>${inSub?(S.open?'질문':esc(user(S.dmWith).name)):title}</h1>
+    <span class="school-tag" title="학교 인증 완료">✔ ${esc(S.me.school.replace('등학교',''))} ${S.me.grade}학년</span></header>
+  <main class="view" id="view">${main}</main>
+  ${S.tab==='board'&&!inSub?`<button class="btn primary fab" data-a="compose">＋ 질문하기</button>`:''}
+  <nav class="tabs" aria-label="메뉴">
+    ${[['board','📚','게시판'],['friends','👥','친구'],['dm','💬','DM'],['me','🛡️','내 정보']].map(([k,i,l])=>`<button data-a="tab" data-v="${k}" ${S.tab===k&&!inSub?'aria-current="page"':''}><span class="ico">${i}</span>${l}${k==='dm'&&unread?`<span class="badge">${unread}</span>`:''}</button>`).join('')}
+  </nav>
+  ${S.sheet?renderSheet():''}${S.toast?`<div class="toast" role="status">${esc(S.toast)}</div>`:''}`;
+}
+
+function renderOnb(){
+  if(S.step==='onb1') return `<div class="onb"><div class="steps">1 / 2 · 학교 선택</div>
+    <h1>우리학교 질문방</h1><p class="hint" style="margin:0 0 18px">같은 학교 친구·선배에게만 묻고 답해요.</p>
+    <div class="field"><label for="f-school">학교</label><select id="f-school">${SCHOOLS.map(s=>`<option ${s===S.me.school?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="field"><label for="f-grade">학년</label><select id="f-grade">${[1,2,3].map(g=>`<option value="${g}" ${g===S.me.grade?'selected':''}>${g}학년</option>`).join('')}</select></div>
+    <div class="field"><label for="f-name">닉네임</label><input id="f-name" maxlength="8" value="${esc(S.me.name==='나'?'':S.me.name)}" placeholder="실명 대신 닉네임"><span class="hint">실명과 연락처는 공개되지 않아요.</span></div>
+    <button class="btn primary" style="width:100%" data-a="onb1">다음</button></div>`;
+  return `<div class="onb"><div class="steps">2 / 2 · 학교 인증</div>
+    <h1>재학생 인증</h1><p class="hint" style="margin:0 0 18px">${esc(S.me.school)} 학교 이메일로 받은 6자리 코드를 입력해요. 인증하면 게시판과 DM이 열려요.</p>
+    <div class="field"><label for="f-code">인증 코드</label><input id="f-code" inputmode="numeric" maxlength="6" placeholder="123456"><span class="hint"><span class="demo">DEMO</span> 프로토타입이라 숫자 6자리면 모두 통과해요.</span></div>
+    <div class="row"><button class="btn" data-a="onb-back">이전</button><button class="btn primary grow" data-a="onb2">인증하고 시작</button></div></div>`;
+}
+
+function postCard(p){
+  const a=user(p.author), senior=a.grade>p.grade;
+  return `<button class="card" data-a="open" data-id="${p.id}">
+    <div class="meta"><span class="subj">${p.subject}</span><span>${p.grade}학년 게시판</span><span>· ${p.ago}</span>
+      ${p.answers.some(x=>x.accepted)?'<span class="pill good">채택 완료</span>':p.answers.length?'':'<span class="pill warn">답변 대기</span>'}</div>
+    <div class="q-title">${esc(p.title)}</div><p class="q-body">${esc(p.body)}</p>
+    <div class="meta" style="margin-top:6px"><span>${esc(a.name)} ${a.grade}학년</span><span class="mono">답변 ${p.answers.length}</span></div></button>`;
+}
+function renderBoard(){
+  const list=S.posts.filter(p=>visible(p)&&(S.grade==='all'||p.grade===S.grade)&&(S.subj==='all'||p.subject===S.subj));
+  const chip=(k,v,l,cls)=>`<button class="chip" data-a="${k}" data-v="${v}" aria-pressed="${(k==='fg'?S.grade:S.subj)===v}">${l}</button>`;
+  return `<div class="chips" role="group" aria-label="학년">${chip('fg','all','전체 학년')}${[1,2,3].map(g=>chip('fg',g,g+'학년')).join('')}</div>
+    <div class="chips sub" role="group" aria-label="과목">${chip('fs','all','전체 과목')}${SUBJECTS.map(s=>chip('fs',s,s)).join('')}</div>
+    ${list.length?list.map(postCard).join(''):`<div class="empty">조건에 맞는 질문이 없어요.<br>첫 질문을 올려 보세요.</div>`}<div style="height:56px"></div>`;
+}
+
+function renderDetail(){
+  const p=S.posts.find(x=>x.id===S.open); if(!p) return '';
+  const mine=p.author==='me', a=user(p.author), hasAcc=p.answers.some(x=>x.accepted);
+  const ans=p.answers.filter(x=>!S.blocked.includes(x.author)).map(x=>{
+    const u=user(x.author), senior=u.grade>p.grade;
+    return `<div class="ans ${x.accepted?'accepted':''}">
+      <div class="meta"><button class="link" data-a="profile" data-id="${x.author}">${esc(u.name)}</button><span>${u.grade}학년</span>${senior?'<span class="pill senior">선배</span>':''}${x.accepted?'<span class="pill good">✔ 채택된 답변</span>':''}</div>
+      <p>${esc(x.text)}</p>
+      <div class="row">${mine&&!hasAcc&&x.author!=='me'?`<button class="btn good sm" data-a="accept" data-id="${x.id}">이 답변 채택</button>`:''}
+      ${x.author!=='me'?`<button class="btn ghost" data-a="report" data-t="답변" data-id="${x.author}">신고</button>`:''}</div></div>`;}).join('');
+  return `<div class="card" style="cursor:default">
+    <div class="meta"><span class="subj">${p.subject}</span><span>${p.grade}학년 게시판</span><span>· ${p.ago}</span></div>
+    <div class="q-title" style="font-size:17px">${esc(p.title)}</div>
+    <p style="margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere">${esc(p.body)}</p>
+    <div class="row meta"><span>${mine?'내가 쓴 질문':`<button class="link" data-a="profile" data-id="${p.author}">${esc(a.name)}</button> ${a.grade}학년`}</span>
+    ${mine?'':`<button class="btn ghost" data-a="report" data-t="질문" data-id="${p.author}">신고</button>`}</div></div>
+    <h2 class="sec">답변 ${p.answers.length}개 ${mine&&!hasAcc&&p.answers.length?'· 도움 된 답변을 채택하면 DM이 열려요':''}</h2>
+    ${ans||'<div class="empty">아직 답변이 없어요.</div>'}
+    ${mine?'':`<div class="field" style="margin-top:12px"><label for="f-ans">내 답변</label><textarea id="f-ans" placeholder="아는 만큼 알려 주세요. 풀이는 과정까지 써 주면 좋아요."></textarea></div><button class="btn primary" data-a="answer">답변 올리기</button>`}`;
+}
+
+function renderFriends(){
+  const same=Object.values(U).filter(u=>u.id!=='me'&&u.school===S.me.school&&!S.blocked.includes(u.id));
+  const fr=same.filter(u=>S.friends.includes(u.id)), other=same.filter(u=>!S.friends.includes(u.id));
+  const row=(u,add)=>`<div class="card row" style="cursor:default"><div class="av">${esc(u.name[0])}</div><div class="grow"><b>${esc(u.name)}</b><div class="meta">${u.grade}학년${u.grade>S.me.grade?' · 선배':''}</div></div>
+    ${add?`<button class="btn sm" data-a="friend" data-id="${u.id}">친구 추가</button>`:`<button class="btn sm" data-a="dm-user" data-id="${u.id}">DM</button>`}</div>`;
+  return `<h2 class="sec" style="margin-top:0">내 친구 ${fr.length}</h2>${fr.map(u=>row(u,false)).join('')||'<div class="empty">아직 친구가 없어요.</div>'}
+    <h2 class="sec">같은 학교 · 추가할 수 있어요</h2>${other.map(u=>row(u,true)).join('')||'<div class="empty">추가할 학생이 없어요.</div>'}`;
+}
+function renderDMList(){
+  const ids=Object.keys(S.dmUnlocked).filter(id=>!S.blocked.includes(id));
+  if(!ids.length) return `<div class="empty">아직 열린 대화가 없어요.<br>질문에서 답변을 채택하면<br>그 답변자와 1:1 대화가 열려요.</div>`;
+  return ids.map(id=>{const u=user(id),t=S.threads[id]||[],l=t.filter(m=>m.from).slice(-1)[0];
+    return `<button class="card row" data-a="dm-user" data-id="${id}"><div class="av">${esc(u.name[0])}</div><div class="grow"><b>${esc(u.name)}</b> <span class="meta" style="display:inline">${u.grade}학년</span><div class="q-body" style="-webkit-line-clamp:1">${l?esc(l.text):'채택으로 대화가 열렸어요'}</div></div></button>`}).join('');
+}
+function renderThread(){
+  const id=S.dmWith,u=user(id),t=S.threads[id]||[];
+  return `<div class="bubbles" id="bubbles"><div class="sys">${esc(S.me.school)} 학생끼리만 대화할 수 있어요</div>
+    ${t.map(m=>m.sys?`<div class="sys">${esc(m.text)}</div>`:`<div class="bub ${m.from==='me'?'me':''}">${esc(m.text)}</div>`).join('')}</div>
+    <div class="row"><input id="f-dm" class="grow" style="border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 10px" placeholder="메시지 입력" maxlength="200"><button class="btn primary" data-a="send">보내기</button></div>
+    <div class="row" style="margin-top:12px"><button class="btn ghost danger" data-a="report" data-t="대화" data-id="${id}">신고</button><button class="btn ghost danger" data-a="block" data-id="${id}">차단</button></div>`;
+}
+function renderMe(){
+  return `<div class="card" style="cursor:default"><div class="row"><div class="av">${esc(S.me.name[0])}</div><div class="grow"><b>${esc(S.me.name)}</b><div class="meta">${esc(S.me.school)} · ${S.me.grade}학년</div></div><span class="pill good">인증됨</span></div></div>
+    <h2 class="sec">안전 규칙</h2><ul class="safety card" style="padding:12px 14px 12px"><li>게시판은 인증된 같은 학교 학생에게만 보여요</li><li>DM은 같은 학교, 그리고 답변이 채택된 사이에서만 열려요</li><li>신고하면 운영팀이 확인하고 조치해요</li><li>차단하면 서로의 글과 DM이 보이지 않아요</li></ul>
+    <h2 class="sec">차단한 사용자 ${S.blocked.length}</h2>
+    ${S.blocked.map(id=>`<div class="card row" style="cursor:default"><span class="grow">${esc(user(id).name)}</span><button class="btn sm" data-a="unblock" data-id="${id}">해제</button></div>`).join('')||'<p class="hint">없음</p>'}
+    <h2 class="sec">데모</h2><button class="btn" data-a="reset">처음부터 다시 (학교 바꿔보기)</button>`;
+}
+
+function renderSheet(){
+  const sh=S.sheet; let inner='';
+  if(sh.t==='compose'){
+    const d=S.draft, ai=S.ai;
+    inner=`<h2>${S.me.grade}학년 게시판에 질문하기</h2>
+    <div class="field"><label for="c-sub">과목</label><select id="c-sub">${SUBJECTS.map(s=>`<option ${s===d.subject?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="field"><label for="c-title">제목</label><input id="c-title" maxlength="60" value="${esc(d.title)}" placeholder="예: 수행평가 범위가 어디까지인가요?"></div>
+    <div class="field"><label for="c-body">내용</label><textarea id="c-body" placeholder="어디까지 풀었고 어디서 막혔는지 적어 주세요.">${esc(d.body)}</textarea></div>
+    ${ai?`<div class="ai-box"><h3>✨ AI 힌트 코치 <span class="demo">DEMO</span></h3>
+      <b style="font-size:13px">질문을 더 좋게</b><ul>${ai.tips.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
+      <b style="font-size:13px">먼저 이렇게 해 보세요</b><p style="margin:4px 0;font-size:14px">${esc(ai.hint)}</p>
+      ${ai.sims.length?`<b style="font-size:13px">비슷한 질문이 이미 있어요</b>${ai.sims.map(p=>`<button class="sim" data-a="open-sim" data-id="${p.id}">${esc(p.title)}</button>`).join('')}`:''}</div>`:''}
+    <div class="row"><button class="btn" data-a="ai" style="color:var(--ai);border-color:var(--ai)">✨ AI 힌트 받기</button><button class="btn primary grow" data-a="post">질문 올리기</button></div>
+    <p class="hint">AI는 정답을 알려주지 않고 질문을 다듬는 힌트만 줘요. (이 데모는 규칙 기반 시뮬레이션)</p>`;
+  } else if(sh.t==='profile'){
+    const u=user(sh.id), isF=S.friends.includes(u.id), can=!!S.dmUnlocked[u.id];
+    inner=`<div class="row"><div class="av">${esc(u.name[0])}</div><div class="grow"><b>${esc(u.name)}</b><div class="meta">${esc(u.school)} · ${u.grade}학년${u.grade>S.me.grade?' · 선배':''}</div></div></div>
+    <div class="row" style="margin-top:14px"><button class="btn grow" data-a="friend" data-id="${u.id}" ${isF||u.id==='me'?'disabled':''}>${isF?'친구예요':'친구 추가'}</button>
+    <button class="btn primary grow" data-a="dm-user" data-id="${u.id}" ${can?'':'disabled'}>DM 보내기</button></div>
+    ${can?'':'<p class="hint">DM은 이 학생의 답변을 채택한 뒤에 열려요.</p>'}
+    <div class="row" style="margin-top:8px"><button class="btn ghost danger" data-a="report" data-t="사용자" data-id="${u.id}">신고</button><button class="btn ghost danger" data-a="block" data-id="${u.id}">차단</button></div>`;
+  } else if(sh.t==='report'){
+    inner=`<h2>${esc(user(sh.id).name)} ${esc(sh.what)} 신고</h2>
+    <div class="field"><label for="r-why">사유</label><select id="r-why"><option>욕설·비하</option><option>스팸·광고</option><option>개인정보 노출</option><option>부적절한 만남 요구</option><option>기타</option></select></div>
+    <div class="row"><button class="btn" data-a="close">취소</button><button class="btn primary grow" data-a="report-send" data-id="${sh.id}">신고 제출</button></div>`;
+  }
+  return `<div class="sheet-bg" data-a="bg"><div class="sheet" role="dialog" aria-modal="true">${inner}</div></div>`;
+}
+
+/* ---------- actions ---------- */
+function toast(m){S.toast=m;render();clearTimeout(toast.t);toast.t=setTimeout(()=>{S.toast=null;render()},2200)}
+function openDM(id){S.sheet=null;S.open=null;S.tab='dm';S.dmWith=id;S.dmUnread=0;render()}
+function scrollEnd(){const v=document.getElementById('view');if(v)v.scrollTop=v.scrollHeight}
+function syncDraft(){const g=i=>document.getElementById(i);if(g('c-sub')){S.draft={subject:g('c-sub').value,title:g('c-title').value,body:g('c-body').value}}}
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-a]'); if(!el) return;
+  const a=el.dataset.a, id=el.dataset.id, v=el.dataset.v;
+  if(a==='bg'){ if(e.target===el){syncDraft();S.sheet=null;render()} return; }
+  if(a==='onb1'){const n=document.getElementById('f-name').value.trim();if(!n)return toast('닉네임을 입력해 주세요');
+    S.me={school:document.getElementById('f-school').value,grade:+document.getElementById('f-grade').value,name:n};S.step='onb2';return render();}
+  if(a==='onb-back'){S.step='onb1';return render();}
+  if(a==='onb2'){if(!/^\d{6}$/.test(document.getElementById('f-code').value))return toast('6자리 숫자를 입력해 주세요');
+    S.step='app';S.grade='all';return render();}
+  if(a==='tab'){S.tab=v;S.open=null;S.dmWith=null;if(v==='dm')S.dmUnread=0;return render();}
+  if(a==='back'){S.open=null;S.dmWith=null;return render();}
+  if(a==='fg'){S.grade=v==='all'?'all':+v;return render();}
+  if(a==='fs'){S.subj=v;return render();}
+  if(a==='open'||a==='open-sim'){S.sheet=null;S.open=+id;render();return;}
+  if(a==='compose'){S.draft={subject:'수학',title:'',body:''};S.ai=null;S.sheet={t:'compose'};return render();}
+  if(a==='ai'){syncDraft();if(!S.draft.title.trim()&&!S.draft.body.trim())return toast('제목이나 내용을 먼저 써 주세요');runAI();return render();}
+  if(a==='post'){syncDraft();const d=S.draft;if(!d.title.trim()||d.body.trim().length<5)return toast('제목과 내용을 입력해 주세요');
+    const pid=++uid;S.posts.unshift({id:pid,school:S.me.school,grade:S.me.grade,subject:d.subject,author:'me',ago:'방금',title:d.title.trim(),body:d.body.trim(),answers:[]});
+    S.sheet=null;S.ai=null;S.tab='board';toast('질문을 올렸어요');
+    setTimeout(()=>{const p=S.posts.find(x=>x.id===pid);if(!p)return;const sr=Object.values(U).find(u=>u.school===S.me.school&&u.grade>S.me.grade&&!S.blocked.includes(u.id));
+      if(sr){p.answers.push({id:++uid,author:sr.id,text:'어디까지 해 보셨어요? 조건을 식으로 먼저 정리해 보시면 방향이 보일 거예요. 막히는 부분을 더 알려주세요.',accepted:false});toast(sr.name+' 선배가 답변을 남겼어요')}},4000);return;}
+  if(a==='answer'){const t=document.getElementById('f-ans').value.trim();if(t.length<3)return toast('답변을 입력해 주세요');
+    S.posts.find(x=>x.id===S.open).answers.push({id:++uid,author:'me',text:t,accepted:false});return toast('답변을 올렸어요');}
+  if(a==='accept'){const p=S.posts.find(x=>x.id===S.open),an=p.answers.find(x=>x.id===+id);an.accepted=true;
+    S.dmUnlocked[an.author]=true;(S.threads[an.author]=S.threads[an.author]||[]).push({sys:1,text:'답변이 채택되어 대화가 열렸어요'});return toast(user(an.author).name+'님과 DM이 열렸어요');}
+  if(a==='profile'){if(id==='me')return;S.sheet={t:'profile',id};return render();}
+  if(a==='friend'){if(!S.friends.includes(id))S.friends.push(id);return toast(user(id).name+'님을 친구로 추가했어요');}
+  if(a==='dm-user'){if(!S.dmUnlocked[id]&&!S.friends.includes(id)){return toast('답변이 채택된 사이에서만 DM이 열려요')}
+    if(!S.dmUnlocked[id]){return toast('DM은 답변 채택 후에 열려요')}return openDM(id);}
+  if(a==='send'){const i=document.getElementById('f-dm'),t=i.value.trim();if(!t)return;const th=S.threads[S.dmWith]=S.threads[S.dmWith]||[];th.push({from:'me',text:t});
+    const w=S.dmWith;render();scrollEnd();setTimeout(()=>{(S.threads[w]).push({from:w,text:'답장 고마워요! 편하게 물어봐요 😊'});if(S.dmWith===w){render();scrollEnd()}else{S.dmUnread++;render()}},1500);return;}
+  if(a==='report'){S.sheet={t:'report',id,what:el.dataset.t};return render();}
+  if(a==='report-send'){S.reported.push(id);S.sheet=null;toast('신고가 접수됐어요. 확인 후 조치할게요');return;}
+  if(a==='block'){if(!S.blocked.includes(id))S.blocked.push(id);S.sheet=null;S.dmWith=null;S.open=null;return toast(user(id).name+'님을 차단했어요');}
+  if(a==='unblock'){S.blocked=S.blocked.filter(x=>x!==id);return render();}
+  if(a==='close'){S.sheet=null;return render();}
+  if(a==='reset'){S.step='onb1';S.tab='board';S.open=null;S.dmWith=null;S.posts=S.posts.filter(p=>p.id<=6);S.dmUnlocked={};S.threads={};S.blocked=[];return render();}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='f-dm')document.querySelector('[data-a="send"]').click()});
+render();
+</script>
