@@ -1,0 +1,6 @@
+{
+  "name": "스쿨큐(SchoolQ) - 우리 학교 맞춤 Q&A 및 1:1 공부 채팅",
+  "description": "같은 학교 친구·선후배와 시험 범위, 선생님 출제 스타일을 나누고 채택 시 1:1 DM으로 이어지는 안전한 학교 커뮤니티",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
